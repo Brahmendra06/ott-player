@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>M3U8 Manual Audio Player</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+  <style>
+    body {
+      background: black;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: white;
+      font-family: Arial;
+    }
+
+    .player {
+      width: 90%;
+      max-width: 900px;
+    }
+
+    video {
+      width: 100%;
+      border-radius: 10px;
+    }
+
+    select {
+      margin-top: 10px;
+      padding: 8px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="player">
+  <video id="video" controls autoplay></video>
+
+  <select id="audioSelect">
+    <option value="https://s22.nm-cdn11.top/files/82180284/a/4/4.m3u8">Telugu</option>
+    <option value="https://s22.nm-cdn11.top/files/82180284/a/0/0.m3u8">Hindi</option>
+    <option value="https://s22.nm-cdn11.top/files/82180284/a/1/1.m3u8">Kannada</option>
+    <option value="https://s22.nm-cdn11.top/files/82180284/a/2/2.m3u8">Malayalam</option>
+    <option value="https://s22.nm-cdn11.top/files/82180284/a/3/3.m3u8">Tamil</option>
+  </select>
+</div>
+
+<script>
+  const video = document.getElementById("video");
+  const audioSelect = document.getElementById("audioSelect");
+
+  const videoSrc = "https://s22.nm-cdn11.top/files/82180284/1080p/1080p.m3u8?in=9647d8f01fd5802a18c1cb727ab77dac::65fdd5531f8557675c7ee6c5ede3270e::1773927959::ni";
+
+  let hlsVideo = new Hls();
+  let hlsAudio = new Hls();
+
+  // Load video
+  hlsVideo.loadSource(videoSrc);
+  hlsVideo.attachMedia(video);
+
+  // Load default audio (Telugu)
+  let audio = new Audio();
+  audio.muted = false;
+
+  hlsAudio.loadSource(audioSelect.value);
+  hlsAudio.attachMedia(audio);
+
+  // Sync audio with video
+  video.addEventListener("play", () => audio.play());
+  video.addEventListener("pause", () => audio.pause());
+  video.addEventListener("seeking", () => audio.currentTime = video.currentTime);
+
+  // Change audio
+  audioSelect.addEventListener("change", function () {
+    audio.pause();
+    hlsAudio.destroy();
+
+    hlsAudio = new Hls();
+    hlsAudio.loadSource(this.value);
+    hlsAudio.attachMedia(audio);
+
+    audio.currentTime = video.currentTime;
+    audio.play();
+  });
+</script>
+
+</body>
+</html>
