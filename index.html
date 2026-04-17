@@ -1,92 +1,2415 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>M3U8 Manual Audio Player</title>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover, maximum-scale=1.0">
+<title>Ustaad Bhagat Singh — Netflix Style | Multi-Language</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.7/hls.min.js"></script>
+<style>
+  *, *::before, *::after { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+  }
 
-  <style>
-    body {
-      background: black;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      color: white;
-      font-family: Arial;
-    }
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #141414;
+    font-family: 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
+    color: #fff;
+  }
 
-    .player {
-      width: 90%;
-      max-width: 900px;
-    }
+  .player-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    user-select: none;
+    z-index: 100;
+  }
 
-    video {
-      width: 100%;
-      border-radius: 10px;
-    }
+  .video-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    cursor: pointer;
+    overflow: hidden;
+  }
 
-    select {
-      margin-top: 10px;
-      padding: 8px;
-      border-radius: 5px;
-    }
-  </style>
+  .video-container.show-cursor {
+    cursor: pointer;
+  }
+
+  video {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    background: #000;
+  }
+
+  .subtitles-container {
+    position: absolute;
+    bottom: 80px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 20;
+    padding: 0 20px;
+  }
+
+  .subtitle-text {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    font-size: clamp(16px, 4vw, 28px);
+    font-weight: 500;
+    padding: 8px 20px;
+    border-radius: 8px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    line-height: 1.4;
+    max-width: 90%;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: opacity 0.15s ease;
+  }
+
+  .subtitle-text:empty {
+    display: none;
+  }
+
+  .spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    display: none;
+  }
+  
+  .spinner.active { 
+    display: block; 
+  }
+  
+  .spinner-ring {
+    width: 58px;
+    height: 58px;
+    border: 4px solid rgba(255,255,255,0.15);
+    border-top: 4px solid rgba(255,255,255,0.6);
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+  }
+  
+  @keyframes spin { 
+    to { transform: rotate(360deg); } 
+  }
+
+  .controls-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 55%, transparent 100%);
+    padding: 18px 28px 22px;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    z-index: 25;
+    pointer-events: all;
+  }
+
+  .controls-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+  }
+
+  .progress-wrap {
+    margin-bottom: 14px;
+  }
+  
+  .progress-track {
+    position: relative;
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.22);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: height 0.12s;
+  }
+  
+  .progress-track:hover { 
+    height: 7px; 
+  }
+  
+  .prog-buffered {
+    position: absolute; 
+    left: 0; 
+    top: 0;
+    height: 100%; 
+    background: rgba(255,255,255,0.28);
+    border-radius: 2px; 
+    width: 0%;
+  }
+  
+  .prog-played {
+    position: absolute; 
+    left: 0; 
+    top: 0;
+    height: 100%; 
+    background: rgba(255,255,255,0.7);
+    border-radius: 2px; 
+    width: 0%;
+  }
+  
+  .prog-handle {
+    position: absolute; 
+    top: 50%;
+    width: 13px; 
+    height: 13px;
+    background: rgba(255,255,255,0.8); 
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.12s;
+    box-shadow: 0 0 6px rgba(0,0,0,0.5);
+    pointer-events: none;
+  }
+  
+  .progress-track:hover .prog-handle { 
+    transform: translate(-50%, -50%) scale(1); 
+  }
+  
+  .prog-tooltip {
+    position: absolute;
+    bottom: 16px;
+    background: rgba(0,0,0,0.88);
+    color: #fff;
+    font-size: 11px;
+    font-family: monospace;
+    padding: 3px 8px;
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    transition: opacity 0.12s;
+  }
+  
+  .progress-track:hover .prog-tooltip { 
+    opacity: 1; 
+  }
+
+  .ctrl-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+  
+  .ctrl-btn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    padding: 7px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, transform 0.15s;
+    flex-shrink: 0;
+    font-size: 20px;
+  }
+  
+  .ctrl-btn:hover { 
+    background: rgba(255,255,255,0.14); 
+    transform: scale(1.06); 
+  }
+  
+  .ctrl-btn svg { 
+    width: 22px; 
+    height: 22px; 
+    fill: #fff; 
+    display: block; 
+  }
+  
+  .ctrl-btn.sm svg { 
+    width: 19px; 
+    height: 19px; 
+  }
+
+  .vol-wrap { 
+    display: flex; 
+    align-items: center; 
+    gap: 2px; 
+  }
+  
+  .vol-slider {
+    width: 0;
+    overflow: hidden;
+    transition: width 0.2s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 2px;
+    cursor: pointer;
+    outline: none;
+    flex-shrink: 0;
+  }
+  
+  .vol-wrap:hover .vol-slider { 
+    width: 76px; 
+  }
+  
+  .vol-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px; 
+    height: 13px;
+    background: #fff; 
+    border-radius: 50%; 
+    cursor: pointer;
+  }
+  
+  .vol-slider::-moz-range-thumb {
+    width: 13px; 
+    height: 13px;
+    background: #fff; 
+    border-radius: 50%;
+    cursor: pointer; 
+    border: none;
+  }
+
+  .time-display {
+    color: rgba(255,255,255,0.85);
+    font-size: 13px;
+    font-family: monospace;
+    white-space: nowrap;
+    padding: 0 6px;
+    flex-shrink: 0;
+  }
+  
+  .spacer { 
+    flex: 1; 
+    min-width: 0; 
+  }
+
+  .cc-btn {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .cc-panel {
+    position: absolute;
+    bottom: 52px;
+    right: 0;
+    width: 280px;
+    background: rgba(20,20,20,0.97);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    backdrop-filter: blur(14px);
+    z-index: 50;
+    overflow: hidden;
+    transform: translateY(8px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  .cc-panel.open {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0);
+  }
+
+  .cp-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  
+  .cp-header i { 
+    font-size: 16px;
+    color: rgba(255,255,255,0.7); 
+    flex-shrink: 0; 
+  }
+  
+  .cp-header span { 
+    font-size: 13px; 
+    font-weight: 600; 
+    color: #fff; 
+    letter-spacing: 0.3px; 
+  }
+
+  .cp-section { 
+    padding: 14px 18px; 
+  }
+
+  .cc-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: background 0.15s;
+    margin-bottom: 8px;
+  }
+
+  .cc-toggle-row:hover {
+    background: rgba(255,255,255,0.07);
+  }
+
+  .cc-label-text { 
+    font-size: 13px; 
+    color: rgba(255,255,255,0.85); 
+  }
+  
+  .toggle-switch {
+    position: relative;
+    width: 40px;
+    height: 22px;
+  }
+  
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  
+  .toggle-track {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.2);
+    border-radius: 11px;
+    transition: background 0.2s;
+  }
+  
+  .toggle-track::before {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    left: 3px; top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  
+  .toggle-switch input:checked + .toggle-track { background: rgba(255,255,255,0.4); }
+  .toggle-switch input:checked + .toggle-track::before { transform: translateX(18px); }
+
+  .cp-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    margin-top: 10px;
+  }
+
+  .subtitle-size-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .subtitle-size-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    min-width: 60px;
+  }
+
+  .subtitle-size-slider {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  .subtitle-size-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: rgba(255,255,255,0.8);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .subtitle-size-value {
+    font-size: 12px;
+    color: #fff;
+    min-width: 45px;
+    text-align: right;
+  }
+
+  .settings-btn {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .settings-panel {
+    position: absolute;
+    bottom: 52px;
+    right: 0;
+    width: 310px;
+    background: rgba(20,20,20,0.97);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    backdrop-filter: blur(14px);
+    z-index: 50;
+    overflow: hidden;
+    transform: translateY(8px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  .settings-panel.open {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0);
+  }
+
+  .sp-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  
+  .sp-header i { 
+    font-size: 16px;
+    color: rgba(255,255,255,0.7); 
+    flex-shrink: 0; 
+  }
+  
+  .sp-header span { 
+    font-size: 13px; 
+    font-weight: 600; 
+    color: #fff; 
+    letter-spacing: 0.3px; 
+  }
+
+  .sp-section { 
+    padding: 14px 18px; 
+  }
+  
+  .sp-section + .sp-section { 
+    border-top: 1px solid rgba(255,255,255,0.06); 
+  }
+
+  .sp-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .lang-list { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 6px; 
+  }
+  
+  .lang-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+    position: relative;
+  }
+  
+  .lang-row:hover { 
+    background: rgba(255,255,255,0.07); 
+  }
+  
+  .lang-row.active {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.3);
+  }
+  
+  .lang-flag {
+    width: 28px;
+    height: 20px;
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    line-height: 1;
+  }
+  
+  .lang-info { 
+    flex: 1; 
+    min-width: 0; 
+  }
+  
+  .lang-name { 
+    font-size: 13px; 
+    font-weight: 500; 
+    color: #fff; 
+  }
+  
+  .lang-meta { 
+    font-size: 11px; 
+    color: rgba(255,255,255,0.4); 
+    margin-top: 1px; 
+  }
+  
+  .lang-check {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  
+  .lang-row.active .lang-check {
+    background: rgba(255,255,255,0.6);
+    border-color: rgba(255,255,255,0.6);
+  }
+  
+  .lang-check svg { 
+    width: 10px; 
+    height: 10px; 
+    fill: #000; 
+    display: none; 
+  }
+  
+  .lang-row.active .lang-check svg { 
+    display: block; 
+  }
+
+  .np-bar {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 14px;
+    position: absolute;
+    right: 44px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  .np-bar span {
+    display: inline-block;
+    width: 3px;
+    background: rgba(255,255,255,0.7);
+    border-radius: 2px;
+    animation: npwave 1.1s ease-in-out infinite;
+  }
+  
+  .np-bar span:nth-child(1) { height: 6px; animation-delay: 0s; }
+  .np-bar span:nth-child(2) { height: 12px; animation-delay: 0.18s; }
+  .np-bar span:nth-child(3) { height: 8px; animation-delay: 0.36s; }
+  .np-bar span:nth-child(4) { height: 10px; animation-delay: 0.54s; }
+  
+  .lang-row:not(.active) .np-bar { display: none; }
+  
+  @keyframes npwave {
+    0%, 100% { transform: scaleY(0.4); }
+    50% { transform: scaleY(1); }
+  }
+
+  .title-overlay {
+    position: absolute;
+    bottom: 110px;
+    left: 36px;
+    z-index: 12;
+    pointer-events: none;
+  }
+  
+  .title-overlay h1 {
+    font-size: clamp(22px, 4.5vw, 52px);
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 1px 2px 10px rgba(0,0,0,0.6);
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+  
+  .title-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  
+  .t-badge {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    padding: 2px 9px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  
+  .t-info {
+    color: rgba(255,255,255,0.75);
+    font-size: 13px;
+  }
+
+  .error-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    z-index: 30;
+  }
+  
+  .error-overlay.show { display: flex; }
+  .error-overlay svg { width: 44px; height: 44px; stroke: rgba(255,255,255,0.6); }
+  .error-overlay p { color: rgba(255,255,255,0.8); font-size: 15px; }
+  
+  .retry-btn {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    padding: 9px 22px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: background 0.15s;
+  }
+  
+  .retry-btn:hover { background: rgba(255,255,255,0.3); }
+
+  .player-wrapper:fullscreen { width: 100vw; height: 100vh; }
+  .player-wrapper:fullscreen .video-container { height: 100vh; aspect-ratio: unset; }
+  .player-wrapper:fullscreen .subtitles-container { bottom: 100px; }
+  .player-wrapper:-webkit-full-screen { width: 100vw; height: 100vh; }
+
+  @media (max-width: 680px) {
+    .title-overlay { left: 18px; bottom: 90px; }
+    .controls-overlay { padding: 12px 16px 16px; }
+    .ctrl-btn { font-size: 18px; }
+    .ctrl-btn svg { width: 18px; height: 18px; }
+    .settings-panel { width: 270px; right: -10px; }
+    .cc-panel { width: 260px; right: -10px; }
+    .time-display { font-size: 11px; }
+    .subtitles-container { bottom: 70px; }
+  }
+</style>
 </head>
-
 <body>
 
-<div class="player">
-  <video id="video" controls autoplay></video>
+<!-- PLAYER WRAPPER CONTAINER - Root element for entire player -->
+<div class="player-wrapper" id="playerWrapper">
+  <!-- VIDEO CONTAINER - Contains video and all overlays -->
+  <div class="video-container" id="videoContainer">
+    <!-- VIDEO ELEMENT - Main video player tag with auto attributes -->
+    <video id="vid" preload="auto" playsinline muted></video>
 
-  <select id="audioSelect">
-    <option value="https://s22.nm-cdn11.top/files/82180284/a/4/4.m3u8">Telugu</option>
-    <option value="https://s22.nm-cdn11.top/files/82180284/a/0/0.m3u8">Hindi</option>
-    <option value="https://s22.nm-cdn11.top/files/82180284/a/1/1.m3u8">Kannada</option>
-    <option value="https://s22.nm-cdn11.top/files/82180284/a/2/2.m3u8">Malayalam</option>
-    <option value="https://s22.nm-cdn11.top/files/82180284/a/3/3.m3u8">Tamil</option>
-  </select>
+    <!-- SUBTITLES CONTAINER - Displays subtitle text below video -->
+    <div class="subtitles-container" id="subtitlesContainer">
+      <!-- SUBTITLE TEXT DISPLAY - Dynamic subtitle content appears here -->
+      <div class="subtitle-text" id="subtitleText"></div>
+    </div>
+
+    <!-- LOADING SPINNER - Shows during buffering or loading -->
+    <div class="spinner" id="spinner">
+      <!-- SPINNER RING - Animated loading indicator -->
+      <div class="spinner-ring"></div>
+    </div>
+
+    <!-- ERROR OVERLAY - Displays when video fails to load -->
+    <div class="error-overlay" id="errOverlay">
+      <!-- ERROR ICON - SVG warning icon -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <!-- ERROR MESSAGE TEXT -->
+      <p>Unable to load stream</p>
+      <!-- RETRY BUTTON - Click to try loading again -->
+      <button class="retry-btn" id="retryBtn">Try Again</button>
+    </div>
+
+    <!-- TITLE OVERLAY - Shows movie/show title -->
+    <div class="title-overlay">
+      <!-- TITLE METADATA SECTION - For future title display -->
+      <div class="title-meta"></div>
+    </div>
+
+    <!-- CONTROLS OVERLAY - Bottom control bar with all playback controls -->
+    <div class="controls-overlay" id="controls">
+      <!-- PROGRESS BAR SECTION - Shows video progress and buffering -->
+      <div class="progress-wrap">
+        <!-- PROGRESS TRACK - Clickable progress bar -->
+        <div class="progress-track" id="progTrack">
+          <!-- BUFFERED PROGRESS - Shows how much is buffered -->
+          <div class="prog-buffered" id="progBuf"></div>
+          <!-- PLAYED PROGRESS - Shows how much is played -->
+          <div class="prog-played" id="progPlay"></div>
+          <!-- PROGRESS HANDLE - Draggable progress indicator -->
+          <div class="prog-handle" id="progHandle"></div>
+          <!-- PROGRESS TOOLTIP - Shows time on hover -->
+          <div class="prog-tooltip" id="progTip">0:00</div>
+        </div>
+      </div>
+
+      <!-- CONTROL ROW - Main button and control row -->
+      <div class="ctrl-row">
+        <!-- PLAY PAUSE BUTTON WITH BOOTSTRAP ICONS -->
+        <button class="ctrl-btn" id="ppBtn" title="Play/Pause">
+          <!-- PLAY PAUSE ICON - Changes between play and pause -->
+          <i id="ppIcon" class="bi bi-play"></i>
+        </button>
+
+        <!-- SKIP BACK BUTTON - Rewinds video 10 seconds -->
+        <button class="ctrl-btn sm" id="skipBack" title="Skip Back 10s">
+          <!-- SKIP BACK ICON SVG -->
+          <svg viewBox="0 0 24 24">
+            <path d="M11.99 5V1l-5 5 5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6h-2c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+            <!-- SKIP BACK TEXT LABEL -->
+            <text x="8.5" y="15.5" font-size="6" fill="white" font-family="Arial" font-weight="700">10</text>
+          </svg>
+        </button>
+
+        <!-- SKIP FORWARD BUTTON - Forwards video 10 seconds -->
+        <button class="ctrl-btn sm" id="skipFwd" title="Skip Forward 10s">
+          <!-- SKIP FORWARD ICON SVG -->
+          <svg viewBox="0 0 24 24">
+            <path d="M12.01 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/>
+            <!-- SKIP FORWARD TEXT LABEL -->
+            <text x="8.5" y="15.5" font-size="6" fill="white" font-family="Arial" font-weight="700">10</text>
+          </svg>
+        </button>
+
+        <!-- VOLUME CONTROL WRAPPER - Contains mute button and volume slider -->
+        <div class="vol-wrap">
+          <!-- MUTE BUTTON WITH BOOTSTRAP ICON - Toggles mute state -->
+          <button class="ctrl-btn" id="muteBtn" title="Mute/Unmute">
+            <!-- VOLUME ICON - Changes based on volume level -->
+            <i id="volIcon" class="bi bi-volume-up-fill"></i>
+          </button>
+          <!-- VOLUME SLIDER - Adjusts volume level from 0 to 1 -->
+          <input type="range" class="vol-slider" id="volSlider" min="0" max="1" step="0.02" value="1">
+        </div>
+
+        <!-- TIME DISPLAY - Shows current time and total duration -->
+        <span class="time-display">
+          <!-- CURRENT TIME DISPLAY -->
+          <span id="curTime">0:00</span> / 
+          <!-- TOTAL DURATION DISPLAY -->
+          <span id="totTime">0:00</span>
+        </span>
+
+        <!-- SPACER - Flexible space that pushes right controls to the right -->
+        <div class="spacer"></div>
+
+        <!-- CAPTIONS/SUBTITLES BUTTON AND PANEL -->
+        <div class="cc-btn" id="ccWrapper">
+          <!-- CC BUTTON WITH BOOTSTRAP ICON - Opens subtitle panel -->
+          <button class="ctrl-btn" id="ccBtn" title="Captions">
+            <!-- CC ICON FROM BOOTSTRAP -->
+            <i class="bi bi-badge-cc"></i>
+          </button>
+
+          <!-- CAPTIONS PANEL - Dropdown menu for subtitle settings -->
+          <div class="cc-panel" id="ccPanel">
+            <!-- CC PANEL HEADER - Shows title and icon -->
+            <div class="cp-header">
+              <!-- CC HEADER ICON -->
+              <i class="bi bi-badge-cc"></i>
+              <!-- CC PANEL TITLE -->
+              <span>Subtitles</span>
+            </div>
+
+            <!-- CC PANEL CONTENT SECTION -->
+            <div class="cp-section">
+              <!-- SUBTITLE TOGGLE ROW - Turn subtitles on/off -->
+              <div class="cc-toggle-row">
+                <!-- TOGGLE LABEL TEXT -->
+                <span class="cc-label-text">Subtitles</span>
+                <!-- TOGGLE SWITCH COMPONENT -->
+                <label class="toggle-switch">
+                  <!-- HIDDEN CHECKBOX INPUT -->
+                  <input type="checkbox" id="subToggle">
+                  <!-- TOGGLE TRACK VISUAL -->
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+
+              <!-- SUBTITLE SIZE SECTION - Controls text size (hidden by default) -->
+              <div id="subtitleSizeSection" style="display: none;">
+                <!-- SUBTITLE SIZE LABEL -->
+                <div class="cp-label">Subtitle Size</div>
+                <!-- SUBTITLE SIZE CONTROL ROW -->
+                <div class="subtitle-size-control">
+                  <!-- SIZE LABEL (SMALL) -->
+                  <span class="subtitle-size-label">Small</span>
+                  <!-- SIZE SLIDER - Ranges from 12px to 32px -->
+                  <input type="range" class="subtitle-size-slider" id="subtitleSizeSlider" min="12" max="32" value="24" step="1">
+                  <!-- SIZE VALUE DISPLAY -->
+                  <span class="subtitle-size-value" id="subtitleSizeValue">24px</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AUDIO LANGUAGE BUTTON AND PANEL -->
+        <div class="settings-btn" id="settingsWrapper">
+          <!-- AUDIO BUTTON WITH BOOTSTRAP ICON - Opens audio language panel -->
+          <button class="ctrl-btn" id="settingsBtn" title="Audio & Language">
+            <!-- AUDIO ICON FROM BOOTSTRAP -->
+            <i class="bi bi-music-note-list"></i>
+          </button>
+
+          <!-- AUDIO LANGUAGE PANEL - Dropdown menu for audio selection -->
+          <div class="settings-panel" id="settingsPanel">
+            <!-- AUDIO PANEL HEADER - Shows title and icon -->
+            <div class="sp-header">
+              <!-- AUDIO HEADER ICON -->
+              <i class="bi bi-music-note-list"></i>
+              <!-- AUDIO PANEL TITLE -->
+              <span>Audio Language</span>
+            </div>
+
+            <!-- AUDIO PANEL CONTENT SECTION -->
+            <div class="sp-section">
+              <!-- SELECT AUDIO LABEL -->
+              <div class="sp-label">Select Audio</div>
+              <!-- AUDIO LANGUAGE LIST CONTAINER -->
+              <div class="lang-list" id="langList">
+
+                <!-- TELUGU AUDIO OPTION -->
+                <div class="lang-row" data-track="telugu">
+                  <!-- LANGUAGE FLAG -->
+                  <div class="lang-flag">🇮🇳</div>
+                  <!-- LANGUAGE INFO - Name and subtitle -->
+                  <div class="lang-info">
+                    <!-- LANGUAGE NAME -->
+                    <div class="lang-name">Telugu</div>
+                    <!-- LANGUAGE METADATA -->
+                    <div class="lang-meta">Original</div>
+                  </div>
+                  <!-- NOW PLAYING ANIMATION BARS -->
+                  <div class="np-bar"><span></span><span></span><span></span><span></span></div>
+                  <!-- SELECTION CHECKMARK -->
+                  <div class="lang-check">
+                    <!-- CHECKMARK SVG -->
+                    <svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+
+                <!-- HINDI AUDIO OPTION -->
+                <div class="lang-row" data-track="hindi">
+                  <!-- LANGUAGE FLAG -->
+                  <div class="lang-flag">🇮🇳</div>
+                  <!-- LANGUAGE INFO - Name and subtitle -->
+                  <div class="lang-info">
+                    <!-- LANGUAGE NAME -->
+                    <div class="lang-name">Hindi</div>
+                    <!-- LANGUAGE METADATA -->
+                    <div class="lang-meta">Dubbed</div>
+                  </div>
+                  <!-- NOW PLAYING ANIMATION BARS -->
+                  <div class="np-bar"><span></span><span></span><span></span><span></span></div>
+                  <!-- SELECTION CHECKMARK -->
+                  <div class="lang-check">
+                    <!-- CHECKMARK SVG -->
+                    <svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+
+                <!-- TAMIL AUDIO OPTION -->
+                <div class="lang-row" data-track="tamil">
+                  <!-- LANGUAGE FLAG -->
+                  <div class="lang-flag">🇮🇳</div>
+                  <!-- LANGUAGE INFO - Name and subtitle -->
+                  <div class="lang-info">
+                    <!-- LANGUAGE NAME -->
+                    <div class="lang-name">Tamil</div>
+                    <!-- LANGUAGE METADATA -->
+                    <div class="lang-meta">Coming Soon</div>
+                  </div>
+                  <!-- NOW PLAYING ANIMATION BARS -->
+                  <div class="np-bar"><span></span><span></span><span></span><span></span></div>
+                  <!-- SELECTION CHECKMARK -->
+                  <div class="lang-check">
+                    <!-- CHECKMARK SVG -->
+                    <svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+
+                <!-- KANNADA AUDIO OPTION -->
+                <div class="lang-row" data-track="kannada">
+                  <!-- LANGUAGE FLAG -->
+                  <div class="lang-flag">🇮🇳</div>
+                  <!-- LANGUAGE INFO - Name and subtitle -->
+                  <div class="lang-info">
+                    <!-- LANGUAGE NAME -->
+                    <div class="lang-name">Kannada</div>
+                    <!-- LANGUAGE METADATA -->
+                    <div class="lang-meta">Coming Soon</div>
+                  </div>
+                  <!-- NOW PLAYING ANIMATION BARS -->
+                  <div class="np-bar"><span></span><span></span><span></span><span></span></div>
+                  <!-- SELECTION CHECKMARK -->
+                  <div class="lang-check">
+                    <!-- CHECKMARK SVG -->
+                    <svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+
+                <!-- MALAYALAM AUDIO OPTION -->
+                <div class="lang-row" data-track="malayalam">
+                  <!-- LANGUAGE FLAG -->
+                  <div class="lang-flag">🇮🇳</div>
+                  <!-- LANGUAGE INFO - Name and subtitle -->
+                  <div class="lang-info">
+                    <!-- LANGUAGE NAME -->
+                    <div class="lang-name">Malayalam</div>
+                    <!-- LANGUAGE METADATA -->
+                    <div class="lang-meta">Coming Soon</div>
+                  </div>
+                  <!-- NOW PLAYING ANIMATION BARS -->
+                  <div class="np-bar"><span></span><span></span><span></span><span></span></div>
+                  <!-- SELECTION CHECKMARK -->
+                  <div class="lang-check">
+                    <!-- CHECKMARK SVG -->
+                    <svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FULLSCREEN BUTTON WITH BOOTSTRAP ICONS -->
+        <button class="ctrl-btn" id="fsBtn" title="Fullscreen">
+          <!-- FULLSCREEN ICON - Changes between fullscreen and exit fullscreen -->
+          <i id="fsIcon" class="bi bi-fullscreen"></i>
+        </button>
+
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-  const video = document.getElementById("video");
-  const audioSelect = document.getElementById("audioSelect");
+// ==================== CONSTANTS ====================
+// Video URL for HLS streaming - Main video source
+const VIDEO_URL = "https://s22.nm-cdn11.top/files/82180524/1080p/1080p.m3u8?in=7520447f5ea362e14297a2d5f4267541::6007d6733379194eb88141417c43ea81::1776336427::ni";
 
-  const videoSrc = "https://s22.nm-cdn11.top/files/82180284/1080p/1080p.m3u8?in=9647d8f01fd5802a18c1cb727ab77dac::65fdd5531f8557675c7ee6c5ede3270e::1773927959::ni";
+// Subtitle URL - External VTT subtitle file
+const SUBTITLE_URL = "https://raw.githubusercontent.com/Brahmendra06/ott-player/main/subtitles.vtt";
 
-  let hlsVideo = new Hls();
-  let hlsAudio = new Hls();
+// Audio tracks configuration object with URLs and labels for each language
+const AUDIO_TRACKS = {
+  // Telugu audio track configuration
+  telugu:    { url: "https://s22.nm-cdn11.top/files/82180524/a/4/4.m3u8",  label: "తెలుగు",    emoji: "🎧" },
+  // Hindi audio track configuration
+  hindi:     { url: "https://s22.nm-cdn11.top/files/82180524/a/0/0.m3u8",  label: "हिन्दी",     emoji: "🎧" },
+  // Tamil audio track configuration - coming soon
+  tamil:     { url: null, label: "தమిழ్",      emoji: "🎧" },
+  // Kannada audio track configuration - coming soon
+  kannada:   { url: null, label: "ಕನ್ನಡ",      emoji: "🎧" },
+  // Malayalam audio track configuration - coming soon
+  malayalam: { url: null, label: "മലയാളം",    emoji: "🎧" },
+};
 
-  // Load video
-  hlsVideo.loadSource(videoSrc);
-  hlsVideo.attachMedia(video);
+// ==================== DOM ELEMENTS ====================
+// Video elements
+// Main video player element
+const vid = document.getElementById('vid');
+// Main player wrapper
+const playerWrap = document.getElementById('playerWrapper');
+// Video container element
+const videoContainer = document.getElementById('videoContainer');
 
-  // Load default audio (Telugu)
-  let audio = new Audio();
-  audio.muted = false;
+// Status indicators
+// Loading spinner element
+const spinner = document.getElementById('spinner');
+// Error overlay element
+const errOverlay = document.getElementById('errOverlay');
+// Retry button
+const retryBtn = document.getElementById('retryBtn');
 
-  hlsAudio.loadSource(audioSelect.value);
-  hlsAudio.attachMedia(audio);
+// Controls
+// Main controls overlay
+const controls = document.getElementById('controls');
+// Play/Pause button
+const ppBtn = document.getElementById('ppBtn');
+// Play/Pause icon with Bootstrap icon
+const ppIcon = document.getElementById('ppIcon');
+// Skip back button
+const skipBack = document.getElementById('skipBack');
+// Skip forward button
+const skipFwd = document.getElementById('skipFwd');
+// Mute button
+const muteBtn = document.getElementById('muteBtn');
+// Volume icon with Bootstrap icon
+const volIcon = document.getElementById('volIcon');
+// Volume slider input
+const volSlider = document.getElementById('volSlider');
 
-  // Sync audio with video
-  video.addEventListener("play", () => audio.play());
-  video.addEventListener("pause", () => audio.pause());
-  video.addEventListener("seeking", () => audio.currentTime = video.currentTime);
+// Time display
+// Current time display
+const curTime = document.getElementById('curTime');
+// Total duration display
+const totTime = document.getElementById('totTime');
 
-  // Change audio
-  audioSelect.addEventListener("change", function () {
-    audio.pause();
-    hlsAudio.destroy();
+// Progress bar elements
+// Progress track clickable area
+const progTrack = document.getElementById('progTrack');
+// Buffered progress bar
+const progBuf = document.getElementById('progBuf');
+// Played progress bar
+const progPlay = document.getElementById('progPlay');
+// Progress handle/scrubber
+const progHandle = document.getElementById('progHandle');
+// Progress tooltip
+const progTip = document.getElementById('progTip');
 
-    hlsAudio = new Hls();
-    hlsAudio.loadSource(this.value);
-    hlsAudio.attachMedia(audio);
+// CC panel elements
+// CC button
+const ccBtn = document.getElementById('ccBtn');
+// CC panel dropdown
+const ccPanel = document.getElementById('ccPanel');
+// Subtitle toggle checkbox
+const subToggle = document.getElementById('subToggle');
+// Subtitle text display
+const subtitleText = document.getElementById('subtitleText');
+// Subtitle size slider
+const subtitleSizeSlider = document.getElementById('subtitleSizeSlider');
+// Subtitle size value display
+const subtitleSizeValue = document.getElementById('subtitleSizeValue');
+// Subtitle size section container
+const subtitleSizeSection = document.getElementById('subtitleSizeSection');
 
-    audio.currentTime = video.currentTime;
-    audio.play();
+// Settings panel elements
+// Settings/Audio button
+const settingsBtn = document.getElementById('settingsBtn');
+// Settings panel dropdown
+const settingsPanel = document.getElementById('settingsPanel');
+// All language rows
+const langRows = document.querySelectorAll('.lang-row');
+
+// Fullscreen button with icon
+// Fullscreen button
+const fsBtn = document.getElementById('fsBtn');
+// Fullscreen icon with Bootstrap icon
+const fsIcon = document.getElementById('fsIcon');
+
+// ==================== STATE VARIABLES ====================
+// HLS instances for video and audio
+// HLS instance for main video
+let hlsVid = null;
+// HLS instance for audio track
+let hlsAud = null;
+
+// Audio management variables
+// Audio element for separate audio track
+let audioEl = null;
+// Currently selected audio track
+let currentTrack = 'telugu';
+
+// Volume state variables
+// Current volume level (0-1)
+let vol = 1;
+// Muted state flag
+let muted = false;
+
+// Playback state variables
+// Seeking state flag
+let seeking = false;
+// Video waiting/buffering state
+let videoWaiting = false;
+// Audio sync interval ID
+let syncTimer = null;
+// Audio ready flag
+let audioReady = false;
+// User has interacted with player
+let interacted = false;
+
+// Panel state variables
+// CC panel open state
+let ccPanelOpen = false;
+// Settings panel open state
+let settingsPanelOpen = false;
+
+// Subtitles state variables
+// Subtitles enabled flag
+let subtitlesEnabled = false;
+// Array of parsed subtitle cues
+let subtitleCues = [];
+// Currently displayed subtitle text
+let currentSubtitle = '';
+// Current subtitle text size in pixels
+let subtitleSize = 24;
+
+// Fullscreen state variable
+// Fullscreen mode active flag
+let isFullscreen = false;
+
+// Controls auto-hide variables
+// Controls hide timer ID
+let controlsHideTimer = null;
+// Delay before hiding controls in milliseconds
+let controlsAutoHideDelay = 3000;
+
+// Click tracking variables
+// Last click timestamp
+let lastClickTime = 0;
+// Last click X coordinate
+let lastClickX = 0;
+// Last click Y coordinate
+let lastClickY = 0;
+
+// Timeout variables
+// Audio loading timeout ID
+let audioLoadTimeout = null;
+
+// ==================== UTILITY FUNCTIONS ====================
+
+// Format seconds to MM:SS format
+function fmtTime(s) {
+  // Check if time is valid number
+  if (!isFinite(s) || isNaN(s) || s === Infinity) return '0:00';
+  // Calculate minutes
+  const m = Math.floor(s / 60);
+  // Calculate seconds remainder
+  const sec = Math.floor(s % 60);
+  // Return formatted string MM:SS
+  return m + ':' + String(sec).padStart(2, '0');
+}
+
+// Update volume icon based on current volume level
+function updateVolIcon(v) {
+  // Check if icon element exists
+  if (!volIcon) return;
+  
+  // Determine effective volume (0 if muted)
+  const effective = muted ? 0 : v;
+  
+  // Set icon based on volume level
+  if (effective === 0) {
+    // Mute icon when volume is 0 or muted
+    volIcon.className = 'bi bi-volume-mute-fill';
+  } else if (effective < 0.5) {
+    // Low volume icon when less than 50%
+    volIcon.className = 'bi bi-volume-down-fill';
+  } else {
+    // High volume icon when 50% or more
+    volIcon.className = 'bi bi-volume-up-fill';
+  }
+}
+
+// Apply volume to audio element
+function applyVol() {
+  // Check if audio element exists
+  if (audioEl) {
+    // Set volume to current level or 0 if muted
+    audioEl.volume = muted ? 0 : vol;
+    // Ensure muted property is false (use volume instead)
+    audioEl.muted = false;
+  }
+}
+
+// Update play/pause button icon
+function setPlayUI(playing) {
+  // Check if play/pause icon exists
+  if (!ppIcon) return;
+  // Set icon based on playing state
+  ppIcon.className = playing
+    ? 'bi bi-pause'
+    : 'bi bi-play';
+}
+
+// Show controls
+function showControls() {
+  // Check if controls exist
+  if (!controls) return;
+  
+  // Remove hidden class to show controls
+  controls.classList.remove('hidden');
+  // Show mouse cursor
+  videoContainer.classList.add('show-cursor');
+  
+  // Clear any existing hide timer
+  clearTimeout(controlsHideTimer);
+
+  // If playing and panels closed, schedule auto-hide
+  if (!vid.paused && !ccPanelOpen && !settingsPanelOpen) {
+    controlsHideTimer = setTimeout(() => {
+      // Check if still should hide
+      if (!vid.paused && !ccPanelOpen && !settingsPanelOpen && controls.classList.contains('hidden') === false) {
+        hideControls();
+      }
+    }, controlsAutoHideDelay);
+  }
+}
+
+// Hide controls
+function hideControls() {
+  // Don't hide if video is paused or panel is open
+  if (vid.paused || ccPanelOpen || settingsPanelOpen) return;
+  
+  // Check if controls exist
+  if (controls) {
+    // Add hidden class to hide controls
+    controls.classList.add('hidden');
+    // Hide mouse cursor
+    videoContainer.classList.remove('show-cursor');
+  }
+}
+
+// ==================== SUBTITLE FUNCTIONS ====================
+
+// Parse VTT subtitle file
+function parseVTT(vttText) {
+  // Initialize empty cues array
+  const cues = [];
+  // Validate input text
+  if (!vttText || typeof vttText !== 'string') {
+    console.warn('Empty or invalid VTT text');
+    return cues;
+  }
+
+  // Split text into lines
+  const lines = vttText.split('\n');
+  // Start index at beginning
+  let i = 0;
+  
+  // Skip header until first cue timing
+  while (i < lines.length && !lines[i].includes('-->')) {
+    i++;
+  }
+
+  // Current cue being parsed
+  let currentCue = null;
+  
+  // Parse all cues
+  for (; i < lines.length; i++) {
+    // Get current line and trim whitespace
+    const line = lines[i].trim();
+    
+    // Handle empty lines
+    if (!line) {
+      // Save current cue if it has text
+      if (currentCue && currentCue.text) {
+        cues.push(currentCue);
+        currentCue = null;
+      }
+      continue;
+    }
+    
+    // Match subtitle timing format HH:MM:SS.mmm --> HH:MM:SS.mmm
+    const timeMatch = line.match(/(\d{1,2}):(\d{2}):(\d{2})[.,](\d{3})\s*-->\s*(\d{1,2}):(\d{2}):(\d{2})[.,](\d{3})/);
+    
+    // If line contains timing
+    if (timeMatch) {
+      // Save previous cue
+      if (currentCue && currentCue.text) {
+        cues.push(currentCue);
+      }
+      
+      // Parse start time
+      const startH = parseInt(timeMatch[1], 10);
+      const startM = parseInt(timeMatch[2], 10);
+      const startS = parseInt(timeMatch[3], 10);
+      const startMs = parseInt(timeMatch[4], 10);
+      const startTime = startH * 3600 + startM * 60 + startS + startMs / 1000;
+      
+      // Parse end time
+      const endH = parseInt(timeMatch[5], 10);
+      const endM = parseInt(timeMatch[6], 10);
+      const endS = parseInt(timeMatch[7], 10);
+      const endMs = parseInt(timeMatch[8], 10);
+      const endTime = endH * 3600 + endM * 60 + endS + endMs / 1000;
+      
+      // Create new cue object
+      currentCue = {
+        start: startTime,
+        end: endTime,
+        text: ''
+      };
+    } else if (currentCue && line && !line.includes('WEBVTT') && !line.includes('NOTE')) {
+      // Add text to current cue
+      if (currentCue.text) {
+        // Append line with newline
+        currentCue.text += '\n' + line;
+      } else {
+        // First line of text
+        currentCue.text = line;
+      }
+    }
+  }
+  
+  // Save last cue if exists
+  if (currentCue && currentCue.text) {
+    cues.push(currentCue);
+  }
+  
+  return cues;
+}
+
+// Load subtitles from URL
+function loadSubtitles() {
+  // Fetch subtitle file from URL
+  fetch(SUBTITLE_URL)
+    .then(response => {
+      // Check if response is ok
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      // Return response as text
+      return response.text();
+    })
+    .then(vttText => {
+      // Parse VTT text
+      subtitleCues = parseVTT(vttText);
+      
+      // If cues loaded successfully
+      if (subtitleCues.length > 0) {
+        // Update display if subtitles enabled
+        if (subtitlesEnabled) {
+          updateSubtitleDisplay();
+        }
+      }
+    })
+    .catch(error => {
+      // Log error to console
+      console.error('Subtitle loading error:', error);
+    });
+}
+
+// Update subtitle display based on current time
+function updateSubtitleDisplay() {
+  // Check if subtitles enabled or elements exist
+  if (!subtitlesEnabled || !vid || !subtitleText) {
+    // Clear subtitle text
+    if (subtitleText) subtitleText.textContent = '';
+    return;
+  }
+  
+  // Get current playback time
+  const currentTime = vid.currentTime;
+  // Initialize active cue as null
+  let activeCue = null;
+  
+  // Find the active cue for current time
+  for (let i = 0; i < subtitleCues.length; i++) {
+    // Get cue from array
+    const cue = subtitleCues[i];
+    // Check if current time is within cue range
+    if (currentTime >= cue.start && currentTime < cue.end) {
+      // Set as active cue
+      activeCue = cue;
+      break;
+    }
+  }
+  
+  // Get text from active cue or empty string
+  const newText = activeCue ? activeCue.text : '';
+  
+  // Only update if text changed
+  if (newText !== currentSubtitle) {
+    // Update current subtitle text
+    currentSubtitle = newText;
+    // Set subtitle text element content
+    subtitleText.textContent = newText;
+  }
+}
+
+// Toggle subtitles on/off
+function toggleSubtitles(enabled) {
+  // Update enabled state
+  subtitlesEnabled = enabled;
+  
+  // If enabling subtitles
+  if (enabled) {
+    // Show size control section
+    if (subtitleSizeSection) subtitleSizeSection.style.display = 'block';
+    // Load subtitles if not already loaded
+    if (subtitleCues.length === 0) {
+      loadSubtitles();
+    } else {
+      // Update display immediately
+      updateSubtitleDisplay();
+    }
+  } else {
+    // Hide size control section when disabled
+    if (subtitleSizeSection) subtitleSizeSection.style.display = 'none';
+    // Clear subtitle display
+    if (subtitleText) subtitleText.textContent = '';
+  }
+}
+
+// Update subtitle size
+function updateSubtitleSize(size) {
+  // Update size variable
+  subtitleSize = size;
+  // Apply font size to subtitle element
+  if (subtitleText) {
+    subtitleText.style.fontSize = size + 'px';
+  }
+  // Update size display value
+  if (subtitleSizeValue) {
+    subtitleSizeValue.textContent = size + 'px';
+  }
+}
+
+// ==================== AUDIO SYNC FUNCTIONS ====================
+
+// Sync audio and video playback
+function syncAudio() {
+  // Stop sync if audio not ready or video paused
+  if (!audioEl || !audioReady || vid.paused) { 
+    stopSync(); 
+    return; 
+  }
+  
+  // Check if audio is ready to play
+  if (audioEl.readyState < 2) return;
+  
+  // Calculate drift between audio and video time
+  const drift = Math.abs(audioEl.currentTime - vid.currentTime);
+  
+  // If video is waiting/buffering
+  if (videoWaiting) {
+    // Pause audio if playing
+    if (!audioEl.paused) audioEl.pause();
+  } else {
+    // Play audio if paused
+    if (audioEl.paused) audioEl.play().catch(() => {});
+    // Sync if drift is too large
+    if (drift > 0.18) audioEl.currentTime = vid.currentTime;
+  }
+}
+
+// Start audio sync interval
+function startSync() {
+  // Check if already running
+  if (syncTimer) return;
+  // Start sync interval every 80ms
+  syncTimer = setInterval(syncAudio, 80);
+}
+
+// Stop audio sync interval
+function stopSync() {
+  // Check if timer exists
+  if (syncTimer) {
+    // Clear interval
+    clearInterval(syncTimer);
+    // Reset timer variable
+    syncTimer = null;
+  }
+}
+
+// ==================== VIDEO INITIALIZATION ====================
+
+// Initialize video with HLS
+function initVideo() {
+  // Check if video element exists
+  if (!vid) return;
+  
+  // Mute video initially (audio comes from separate track)
+  vid.muted = true;
+  // Set initial volume to 0
+  vid.volume = 0;
+  
+  // Check if browser supports HLS
+  if (Hls.isSupported()) {
+    // Destroy existing HLS instance
+    if (hlsVid) hlsVid.destroy();
+    
+    // Create new HLS instance
+    hlsVid = new Hls({ 
+      enableWorker: true, 
+      startLevel: 0,
+      manifestLoadingTimeOut: 10000,
+      manifestLoadingMaxRetry: 3
+    });
+    
+    // Load video source
+    hlsVid.loadSource(VIDEO_URL);
+    // Attach to video element
+    hlsVid.attachMedia(vid);
+    
+    // Handle HLS errors
+    hlsVid.on(Hls.Events.ERROR, (_, d) => { 
+      // Check if fatal error
+      if (d.fatal) {
+        // Log error
+        console.error('HLS Video Error:', d);
+        // Show error overlay
+        showErr(); 
+      }
+    });
+  } else if (vid.canPlayType('application/vnd.apple.mpegurl')) {
+    // Fallback for native HLS support (Safari)
+    vid.src = VIDEO_URL;
+  } else {
+    // No HLS support - show error
+    showErr();
+  }
+}
+
+// Show error overlay
+function showErr() {
+  // Remove spinner
+  if (spinner) spinner.classList.remove('active');
+  // Show error overlay
+  if (errOverlay) errOverlay.classList.add('show');
+}
+
+// ==================== AUDIO TRACK FUNCTIONS ====================
+
+// Load audio track with HLS
+function loadAudioTrack(trackKey, seekTo, autoPlay) {
+  // Get track data from configuration
+  const trackData = AUDIO_TRACKS[trackKey];
+  
+  // Check if track exists and has URL
+  if (!trackData || !trackData.url) {
+    return;
+  }
+
+  // Clear audio loading timeout
+  if (audioLoadTimeout) {
+    clearTimeout(audioLoadTimeout);
+    audioLoadTimeout = null;
+  }
+
+  // Destroy existing audio HLS instance
+  if (hlsAud) { 
+    hlsAud.destroy(); 
+    hlsAud = null; 
+  }
+  
+  // Pause and clear existing audio element
+  if (audioEl) { 
+    audioEl.pause(); 
+    audioEl.src = ''; 
+  }
+
+  // Create new audio element
+  const el = new Audio();
+  // Set audio properties
+  el.preload = 'auto';
+  el.crossOrigin = 'anonymous';
+  el.volume = muted ? 0 : vol;
+  el.muted = false;
+  // Set as current audio element
+  audioEl = el;
+
+  // Track if already done
+  let done = false;
+
+  // Audio ready callback function
+  const ready = () => {
+    // Check if already called
+    if (done) return;
+    // Mark as done
+    done = true;
+    // Set audio ready flag
+    audioReady = true;
+    
+    // Clear loading timeout
+    if (audioLoadTimeout) {
+      clearTimeout(audioLoadTimeout);
+      audioLoadTimeout = null;
+    }
+    
+    // Seek to position if specified
+    if (seekTo != null && isFinite(seekTo)) {
+      el.currentTime = seekTo;
+    }
+    
+    // Auto play if video is playing
+    if (autoPlay && !vid.paused) {
+      el.play().catch(() => {});
+    }
+  };
+
+  // Set timeout for audio loading
+  audioLoadTimeout = setTimeout(() => {
+    // If not ready after 5 seconds, consider it ready anyway
+    if (!done) {
+      done = true;
+      audioReady = true;
+    }
+  }, 5000);
+
+  // Check if browser supports HLS
+  if (Hls.isSupported()) {
+    // Create HLS instance for audio
+    hlsAud = new Hls({ 
+      enableWorker: true, 
+      startLevel: 0,
+      manifestLoadingTimeOut: 10000,
+      manifestLoadingMaxRetry: 3
+    });
+    
+    // When manifest is parsed, audio is ready
+    hlsAud.on(Hls.Events.MANIFEST_PARSED, ready);
+    // Handle HLS errors
+    hlsAud.on(Hls.Events.ERROR, (_, d) => { 
+      // Check if fatal error
+      if (d.fatal && !done) { 
+        // Log error
+        console.error('HLS Audio Error:', d);
+        // Mark as done
+        done = true; 
+        // Set ready flag
+        audioReady = true;
+        // Clear timeout
+        if (audioLoadTimeout) {
+          clearTimeout(audioLoadTimeout);
+          audioLoadTimeout = null;
+        }
+      } 
+    });
+    
+    // Load audio source
+    hlsAud.loadSource(trackData.url);
+    // Attach to audio element
+    hlsAud.attachMedia(el);
+  } else if (el.canPlayType('application/vnd.apple.mpegurl')) {
+    // Fallback for native HLS support
+    el.src = trackData.url;
+    // When metadata loaded, audio is ready
+    el.addEventListener('loadedmetadata', ready, { once: true });
+  } else {
+    // No HLS support
+    done = true;
+    audioReady = true;
+  }
+}
+
+// Select audio language
+function selectLang(trackKey) {
+  // If same track selected, just close panel
+  if (trackKey === currentTrack) { 
+    closeSettingsPanel(); 
+    return; 
+  }
+
+  // Get track data
+  const trackData = AUDIO_TRACKS[trackKey];
+  // Check if track exists and available
+  if (!trackData || !trackData.url) {
+    // Close panel and return
+    closeSettingsPanel();
+    return;
+  }
+
+  // Check if currently playing
+  const wasPlaying = !vid.paused;
+  // Get current playback time
+  const seekTo = isFinite(vid.currentTime) ? vid.currentTime : 0;
+
+  // Mark audio as not ready during loading
+  audioReady = false;
+  // Update current track
+  currentTrack = trackKey;
+  // Load the new audio track
+  loadAudioTrack(trackKey, seekTo, wasPlaying);
+
+  // Update UI - mark selected row as active
+  langRows.forEach(r => {
+    r.classList.toggle('active', r.dataset.track === trackKey);
   });
-</script>
 
+  // Close settings panel
+  closeSettingsPanel();
+}
+
+// ==================== CC PANEL FUNCTIONS ====================
+
+// Open CC panel
+function openCCPanel() {
+  // Set panel open flag
+  ccPanelOpen = true;
+  // Add open class to show panel
+  if (ccPanel) ccPanel.classList.add('open');
+  // Show controls
+  showControls();
+  // Clear hide timer
+  clearTimeout(controlsHideTimer);
+}
+
+// Close CC panel
+function closeCCPanel() {
+  // Set panel open flag to false
+  ccPanelOpen = false;
+  // Remove open class to hide panel
+  if (ccPanel) ccPanel.classList.remove('open');
+  // If not paused, show controls
+  if (!vid.paused) {
+    showControls();
+  }
+}
+
+// ==================== SETTINGS PANEL FUNCTIONS ====================
+
+// Open settings panel
+function openSettingsPanel() {
+  // Set panel open flag
+  settingsPanelOpen = true;
+  // Add open class to show panel
+  if (settingsPanel) settingsPanel.classList.add('open');
+  // Show controls
+  showControls();
+  // Clear hide timer
+  clearTimeout(controlsHideTimer);
+}
+
+// Close settings panel
+function closeSettingsPanel() {
+  // Set panel open flag to false
+  settingsPanelOpen = false;
+  // Remove open class to hide panel
+  if (settingsPanel) settingsPanel.classList.remove('open');
+  // If not paused, show controls
+  if (!vid.paused) {
+    showControls();
+  }
+}
+
+// ==================== PLAYBACK CONTROL FUNCTIONS ====================
+
+// Toggle play/pause
+function togglePlay() {
+  // Check if video element exists
+  if (!vid) return;
+  
+  // Set interacted flag
+  interacted = true;
+  
+  // If paused, play video and audio
+  if (vid.paused) {
+    vid.play().catch(() => {});
+    if (audioEl && audioReady) audioEl.play().catch(() => {});
+  } else {
+    // If playing, pause video and audio
+    vid.pause();
+    if (audioEl) audioEl.pause();
+  }
+}
+
+// Seek to position
+function doSeek(clientX) {
+  // Check if elements exist
+  if (!vid || !progTrack) return;
+  
+  // Get progress bar position
+  const rect = progTrack.getBoundingClientRect();
+  // Calculate click position relative to bar
+  const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+  // Calculate percentage
+  const pct = x / rect.width;
+  // Calculate time in seconds
+  const t = pct * vid.duration;
+  
+  // Check if time is valid
+  if (!isFinite(t)) return;
+  
+  // Set video seek position
+  vid.currentTime = t;
+  
+  // Sync audio if loaded
+  if (audioEl && audioReady && audioEl.readyState >= 1) {
+    audioEl.currentTime = t;
+  }
+  
+  // Update progress bar UI
+  if (progPlay) progPlay.style.width = (pct * 100) + '%';
+  if (progHandle) progHandle.style.left = (pct * 100) + '%';
+  if (curTime) curTime.textContent = fmtTime(t);
+  
+  // Update subtitles
+  if (subtitlesEnabled) {
+    updateSubtitleDisplay();
+  }
+}
+
+// ==================== EVENT LISTENERS - PROGRESS BAR ====================
+
+// Progress track mouse move and seeking
+if (progTrack) {
+  // Mouse move on progress track
+  progTrack.addEventListener('mousemove', (e) => {
+    // Check elements exist
+    if (!vid || !progTip) return;
+    // Get track position
+    const rect = progTrack.getBoundingClientRect();
+    // Calculate mouse position
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    // Move tooltip to mouse position
+    progTip.style.left = x + 'px';
+    // Show time at mouse position
+    progTip.textContent = fmtTime((x / rect.width) * vid.duration);
+    
+    // If seeking, update position
+    if (seeking) doSeek(e.clientX);
+  });
+
+  // Mouse down - start seeking
+  progTrack.addEventListener('mousedown', (e) => {
+    seeking = true;
+    stopSync();
+    doSeek(e.clientX);
+  });
+
+  // Touch start - start seeking on mobile
+  progTrack.addEventListener('touchstart', (e) => {
+    seeking = true;
+    stopSync();
+    doSeek(e.touches[0].clientX);
+  }, { passive: true });
+
+  // Touch move - continue seeking on mobile
+  progTrack.addEventListener('touchmove', (e) => {
+    if (seeking) doSeek(e.touches[0].clientX);
+  }, { passive: true });
+}
+
+// Mouse up - stop seeking
+window.addEventListener('mouseup', () => {
+  // If was seeking
+  if (seeking) { 
+    seeking = false; 
+    // Resume sync if playing
+    if (!vid.paused) startSync(); 
+  }
+});
+
+// Touch end - stop seeking
+window.addEventListener('touchend', () => {
+  // If was seeking
+  if (seeking) { 
+    seeking = false; 
+    // Resume sync if playing
+    if (!vid.paused) startSync(); 
+  }
+});
+
+// ==================== EVENT LISTENERS - VIDEO EVENTS ====================
+
+// Main video event listeners
+if (vid) {
+  // When video starts playing
+  vid.addEventListener('play', () => {
+    // Update play button icon
+    setPlayUI(true);
+    // Clear waiting flag
+    videoWaiting = false;
+    // Start audio sync
+    startSync();
+    // Play audio if ready
+    if (audioEl && audioReady && audioEl.paused) audioEl.play().catch(() => {});
+    // Show controls
+    showControls();
+  });
+
+  // When video pauses
+  vid.addEventListener('pause', () => {
+    // Update pause button icon
+    setPlayUI(false);
+    // Stop audio sync
+    stopSync();
+    // Pause audio
+    if (audioEl) audioEl.pause();
+    // Show controls
+    showControls();
+    // Clear hide timer so controls stay visible
+    clearTimeout(controlsHideTimer);
+  });
+
+  // When video waits for data
+  vid.addEventListener('waiting', () => {
+    // Set waiting flag
+    videoWaiting = true;
+    // Show spinner
+    if (spinner) spinner.classList.add('active');
+  });
+
+  // When video can play
+  vid.addEventListener('canplay', () => {
+    // Clear waiting flag
+    videoWaiting = false;
+    // Hide spinner
+    if (spinner) spinner.classList.remove('active');
+  });
+
+  // When seeking starts
+  vid.addEventListener('seeking', () => {
+    // Set waiting flag
+    videoWaiting = true;
+    // Show spinner
+    if (spinner) spinner.classList.add('active');
+  });
+
+  // When seeking completes
+  vid.addEventListener('seeked', () => {
+    // Clear waiting flag
+    videoWaiting = false;
+    // Hide spinner
+    if (spinner) spinner.classList.remove('active');
+    // Update subtitles
+    if (subtitlesEnabled) {
+      updateSubtitleDisplay();
+    }
+  });
+
+  // When video time updates
+  vid.addEventListener('timeupdate', () => {
+    // Skip if seeking
+    if (seeking || !vid) return;
+    // Calculate progress percentage
+    const pct = (vid.currentTime / vid.duration) * 100;
+    // Update played progress bar
+    if (progPlay) progPlay.style.width = pct + '%';
+    // Update handle position
+    if (progHandle) progHandle.style.left = pct + '%';
+    // Update time display
+    if (curTime) curTime.textContent = fmtTime(vid.currentTime);
+    
+    // Update subtitle display
+    if (subtitlesEnabled) {
+      updateSubtitleDisplay();
+    }
+  });
+
+  // When duration changes
+  vid.addEventListener('durationchange', () => {
+    // Update total time display
+    if (totTime) totTime.textContent = fmtTime(vid.duration);
+  });
+
+  // When video buffers progress
+  vid.addEventListener('progress', () => {
+    // Check if buffered ranges exist
+    if (vid.buffered.length && vid.duration) {
+      // Get end of last buffered range
+      const end = vid.buffered.end(vid.buffered.length - 1);
+      // Update buffered progress bar
+      if (progBuf) progBuf.style.width = (end / vid.duration * 100) + '%';
+    }
+  });
+
+  // When metadata loads
+  vid.addEventListener('loadedmetadata', () => {
+    // Load default Telugu audio
+    loadAudioTrack('telugu', 0, false);
+    // Mark Telugu as active
+    const teluguRow = document.querySelector('[data-track="telugu"]');
+    if (teluguRow) teluguRow.classList.add('active');
+    
+    // Load subtitles
+    loadSubtitles();
+  });
+
+  // Handle video errors
+  vid.addEventListener('error', showErr);
+}
+
+// ==================== EVENT LISTENERS - CONTROL BUTTONS ====================
+
+// Play/Pause button click
+if (ppBtn) {
+  ppBtn.addEventListener('click', togglePlay);
+}
+
+// ==================== EVENT LISTENERS - VIDEO CONTAINER CLICK ====================
+
+// Video container click for play/pause
+if (videoContainer) {
+  // Click event on video container
+  videoContainer.addEventListener('click', (e) => {
+    // Get current timestamp
+    const currentTime = Date.now();
+    // Calculate time between clicks
+    const timeBetweenClicks = currentTime - lastClickTime;
+    // Calculate distance between clicks
+    const distance = Math.sqrt(
+      Math.pow(e.clientX - lastClickX, 2) + Math.pow(e.clientY - lastClickY, 2)
+    );
+
+    // If click is on controls, don't toggle play
+    if (controls && controls.contains(e.target)) {
+      lastClickTime = currentTime;
+      lastClickX = e.clientX;
+      lastClickY = e.clientY;
+      return;
+    }
+
+    // Single click detected (not double-click and small distance)
+    if (timeBetweenClicks > 300 || distance > 30) {
+      // Mark as interacted
+      interacted = true;
+      // If CC panel open, close it
+      if (ccPanelOpen) { 
+        closeCCPanel(); 
+      } else if (settingsPanelOpen) {
+        // If settings panel open, close it
+        closeSettingsPanel();
+      } else {
+        // Otherwise toggle play/pause
+        togglePlay();
+      }
+    }
+
+    // Update last click tracking
+    lastClickTime = currentTime;
+    lastClickX = e.clientX;
+    lastClickY = e.clientY;
+  });
+
+  // Mouse move on video - show controls
+  videoContainer.addEventListener('mousemove', () => {
+    showControls();
+  });
+}
+
+// Skip back button click
+if (skipBack) {
+  skipBack.addEventListener('click', () => {
+    // Check if video exists
+    if (!vid) return;
+    // Rewind 10 seconds
+    vid.currentTime = Math.max(0, vid.currentTime - 10);
+    // Sync audio if loaded
+    if (audioEl && audioReady) audioEl.currentTime = vid.currentTime;
+    // Update subtitles
+    if (subtitlesEnabled) updateSubtitleDisplay();
+    // Show controls
+    showControls();
+  });
+}
+
+// Skip forward button click
+if (skipFwd) {
+  skipFwd.addEventListener('click', () => {
+    // Check if video exists
+    if (!vid) return;
+    // Forward 10 seconds
+    vid.currentTime = Math.min(vid.duration, vid.currentTime + 10);
+    // Sync audio if loaded
+    if (audioEl && audioReady) audioEl.currentTime = vid.currentTime;
+    // Update subtitles
+    if (subtitlesEnabled) updateSubtitleDisplay();
+    // Show controls
+    showControls();
+  });
+}
+
+// Volume slider input event
+if (volSlider) {
+  volSlider.addEventListener('input', (e) => {
+    // Get slider value
+    vol = parseFloat(e.target.value);
+    // Update muted state
+    muted = vol === 0;
+    // Apply volume to audio
+    applyVol();
+    // Update volume icon
+    updateVolIcon(vol);
+  });
+}
+
+// Mute button click event
+if (muteBtn) {
+  muteBtn.addEventListener('click', () => {
+    // Toggle muted state
+    muted = !muted;
+    // Apply volume
+    applyVol();
+    // Update volume icon
+    updateVolIcon(vol);
+    // Update slider value
+    if (volSlider) volSlider.value = muted ? 0 : vol;
+  });
+}
+
+// Fullscreen button click event
+if (fsBtn) {
+  fsBtn.addEventListener('click', () => {
+    // Check if player exists
+    if (!playerWrap) return;
+    // If not in fullscreen
+    if (!document.fullscreenElement) {
+      // Request fullscreen
+      playerWrap.requestFullscreen().catch(() => {});
+    } else {
+      // Exit fullscreen
+      document.exitFullscreen();
+    }
+  });
+}
+
+// ==================== EVENT LISTENERS - CC PANEL ====================
+
+// CC button click event
+if (ccBtn) {
+  ccBtn.addEventListener('click', (e) => {
+    // Prevent event bubbling
+    e.stopPropagation();
+    // Toggle CC panel
+    ccPanelOpen ? closeCCPanel() : openCCPanel();
+    // Close settings panel if open
+    if (settingsPanelOpen) closeSettingsPanel();
+  });
+}
+
+// Close panels when clicking outside
+document.addEventListener('click', (e) => {
+  // Check if CC panel should close
+  if (ccPanelOpen && ccPanel && !ccPanel.contains(e.target) && e.target !== ccBtn) {
+    closeCCPanel();
+  }
+  // Check if settings panel should close
+  if (settingsPanelOpen && settingsPanel && !settingsPanel.contains(e.target) && e.target !== settingsBtn) {
+    closeSettingsPanel();
+  }
+});
+
+// Subtitle toggle event
+if (subToggle) {
+  subToggle.addEventListener('change', () => {
+    // Toggle subtitles based on checkbox
+    toggleSubtitles(subToggle.checked);
+  });
+}
+
+// Subtitle size slider event
+if (subtitleSizeSlider) {
+  subtitleSizeSlider.addEventListener('input', (e) => {
+    // Update subtitle size
+    updateSubtitleSize(parseInt(e.target.value));
+  });
+}
+
+// ==================== EVENT LISTENERS - SETTINGS PANEL ====================
+
+// Settings button click event
+if (settingsBtn) {
+  settingsBtn.addEventListener('click', (e) => {
+    // Prevent event bubbling
+    e.stopPropagation();
+    // Toggle settings panel
+    settingsPanelOpen ? closeSettingsPanel() : openSettingsPanel();
+    // Close CC panel if open
+    if (ccPanelOpen) closeCCPanel();
+  });
+}
+
+// Language row click events
+langRows.forEach(row => {
+  row.addEventListener('click', () => selectLang(row.dataset.track));
+});
+
+// ==================== EVENT LISTENERS - FULLSCREEN ====================
+
+// Fullscreen change event listener
+document.addEventListener('fullscreenchange', () => {
+  // Update fullscreen state
+  isFullscreen = !!document.fullscreenElement;
+  
+  // Update fullscreen icon based on state
+  if (fsIcon) {
+    // If fullscreen active
+    if (isFullscreen) {
+      // Exit fullscreen icon
+      fsIcon.className = 'bi bi-fullscreen-exit';
+    } else {
+      // Enter fullscreen icon
+      fsIcon.className = 'bi bi-fullscreen';
+    }
+  }
+
+  // Show controls in fullscreen
+  if (isFullscreen && !vid.paused) {
+    showControls();
+  }
+});
+
+// ==================== EVENT LISTENERS - KEYBOARD SHORTCUTS ====================
+
+// Keyboard event listener
+document.addEventListener('keydown', (e) => {
+  // Skip if input element is focused
+  if (e.target.tagName === 'INPUT') return;
+  
+  // Check key code and execute corresponding action
+  switch (e.code) {
+    // SPACE - Play/Pause
+    case 'Space': 
+      // Prevent default spacebar behavior
+      e.preventDefault(); 
+      // Mark as interacted
+      interacted = true; 
+      // Toggle play/pause
+      togglePlay(); 
+      // Show controls
+      showControls();
+      break;
+      
+    // ARROW LEFT - Skip back 10 seconds
+    case 'ArrowLeft':
+      // Check if video exists
+      if (!vid) return;
+      // Rewind 10 seconds
+      vid.currentTime = Math.max(0, vid.currentTime - 10);
+      // Sync audio
+      if (audioEl && audioReady) audioEl.currentTime = vid.currentTime;
+      // Update subtitles
+      if (subtitlesEnabled) updateSubtitleDisplay();
+      // Show controls
+      showControls();
+      break;
+      
+    // ARROW RIGHT - Skip forward 10 seconds
+    case 'ArrowRight':
+      // Check if video exists
+      if (!vid) return;
+      // Forward 10 seconds
+      vid.currentTime = Math.min(vid.duration, vid.currentTime + 10);
+      // Sync audio
+      if (audioEl && audioReady) audioEl.currentTime = vid.currentTime;
+      // Update subtitles
+      if (subtitlesEnabled) updateSubtitleDisplay();
+      // Show controls
+      showControls();
+      break;
+      
+    // ARROW UP - Increase volume
+    case 'ArrowUp': 
+      // Check if slider exists
+      if (volSlider) {
+        // Increase volume by 0.1
+        volSlider.value = Math.min(1, vol + 0.1); 
+        // Trigger input event
+        volSlider.dispatchEvent(new Event('input')); 
+      }
+      break;
+      
+    // ARROW DOWN - Decrease volume
+    case 'ArrowDown': 
+      // Check if slider exists
+      if (volSlider) {
+        // Decrease volume by 0.1
+        volSlider.value = Math.max(0, vol - 0.1); 
+        // Trigger input event
+        volSlider.dispatchEvent(new Event('input')); 
+      }
+      break;
+      
+    // M - Mute/Unmute
+    case 'KeyM': 
+      // Trigger mute button click
+      if (muteBtn) muteBtn.click(); 
+      break;
+      
+    // F - Fullscreen
+    case 'KeyF': 
+      // Trigger fullscreen button click
+      if (fsBtn) fsBtn.click(); 
+      break;
+      
+    // C - Toggle captions
+    case 'KeyC':
+      // Trigger CC button click
+      if (ccBtn) ccBtn.click();
+      break;
+      
+    // ESC - Close panels
+    case 'Escape': 
+      // Close CC panel if open
+      if (ccPanelOpen) closeCCPanel();
+      // Close settings panel if open
+      if (settingsPanelOpen) closeSettingsPanel();
+      break;
+  }
+});
+
+// ==================== EVENT LISTENERS - ERROR RECOVERY ====================
+
+// Retry button click event
+if (retryBtn) {
+  retryBtn.addEventListener('click', () => {
+    // Hide error overlay
+    if (errOverlay) errOverlay.classList.remove('show');
+    // Re-initialize video
+    initVideo();
+  });
+}
+
+// ==================== CLEANUP ====================
+
+// Window unload event - cleanup
+window.addEventListener('beforeunload', () => {
+  // Stop audio sync
+  stopSync();
+  // Destroy video HLS instance
+  if (hlsVid) hlsVid.destroy();
+  // Destroy audio HLS instance
+  if (hlsAud) hlsAud.destroy();
+  // Clear audio loading timeout
+  if (audioLoadTimeout) clearTimeout(audioLoadTimeout);
+  // Clear controls hide timer
+  if (controlsHideTimer) clearTimeout(controlsHideTimer);
+});
+
+// ==================== INITIALIZATION ====================
+
+// Initialize video player on page load
+initVideo();
+
+// Initialize volume UI
+updateVolIcon(1);
+applyVol();
+updateSubtitleSize(24);
+
+// Set initial subtitle size slider value
+if (subtitleSizeSlider) {
+  subtitleSizeSlider.value = 24;
+}
+
+// Log initialization complete
+console.log('Player Initialized');
+</script>
 </body>
 </html>
