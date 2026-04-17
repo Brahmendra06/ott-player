@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.7/hls.min.js"></script>
 <style>
+  /* ==================== UNIVERSAL STYLES ==================== */
   *, *::before, *::after { 
     margin: 0; 
     padding: 0; 
@@ -20,8 +21,13 @@
     background: #141414;
     font-family: 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
     color: #fff;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 
+  /* ==================== PLAYER WRAPPER ==================== */
   .player-wrapper {
     position: fixed;
     top: 0;
@@ -29,10 +35,10 @@
     width: 100%;
     height: 100%;
     background: #000;
-    user-select: none;
     z-index: 100;
   }
 
+  /* ==================== VIDEO CONTAINER ==================== */
   .video-container {
     position: relative;
     width: 100%;
@@ -46,6 +52,7 @@
     cursor: pointer;
   }
 
+  /* ==================== VIDEO ELEMENT ==================== */
   video {
     width: 100%;
     height: 100%;
@@ -54,6 +61,7 @@
     background: #000;
   }
 
+  /* ==================== SUBTITLES CONTAINER ==================== */
   .subtitles-container {
     position: absolute;
     bottom: 80px;
@@ -85,6 +93,7 @@
     display: none;
   }
 
+  /* ==================== LOADING SPINNER ==================== */
   .spinner {
     position: absolute;
     top: 50%;
@@ -111,6 +120,7 @@
     to { transform: rotate(360deg); } 
   }
 
+  /* ==================== CONTROLS OVERLAY ==================== */
   .controls-overlay {
     position: absolute;
     bottom: 0;
@@ -130,6 +140,7 @@
     transition: opacity 0.5s ease;
   }
 
+  /* ==================== PROGRESS BAR ==================== */
   .progress-wrap {
     margin-bottom: 14px;
   }
@@ -142,6 +153,7 @@
     border-radius: 2px;
     cursor: pointer;
     transition: height 0.12s;
+    -webkit-touch-callout: none;
   }
   
   .progress-track:hover { 
@@ -205,6 +217,7 @@
     opacity: 1; 
   }
 
+  /* ==================== CONTROL ROW ==================== */
   .ctrl-row {
     display: flex;
     align-items: center;
@@ -225,11 +238,18 @@
     transition: background 0.15s, transform 0.15s;
     flex-shrink: 0;
     font-size: 20px;
+    -webkit-tap-highlight-color: transparent;
+    tap-highlight-color: transparent;
   }
   
   .ctrl-btn:hover { 
     background: rgba(255,255,255,0.14); 
     transform: scale(1.06); 
+  }
+
+  .ctrl-btn:active {
+    background: rgba(255,255,255,0.2);
+    transform: scale(0.98);
   }
   
   .ctrl-btn svg { 
@@ -244,6 +264,7 @@
     height: 19px; 
   }
 
+  /* ==================== VOLUME CONTROL ==================== */
   .vol-wrap { 
     display: flex; 
     align-items: center; 
@@ -286,6 +307,7 @@
     border: none;
   }
 
+  /* ==================== TIME DISPLAY ==================== */
   .time-display {
     color: rgba(255,255,255,0.85);
     font-size: 13px;
@@ -300,6 +322,7 @@
     min-width: 0; 
   }
 
+  /* ==================== CC BUTTON AND PANEL ==================== */
   .cc-btn {
     position: relative;
     flex-shrink: 0;
@@ -331,6 +354,7 @@
     transform: translateY(0);
   }
 
+  /* ==================== PANEL HEADER ==================== */
   .cp-header {
     display: flex;
     align-items: center;
@@ -352,6 +376,7 @@
     letter-spacing: 0.3px; 
   }
 
+  /* ==================== PANEL CONTENT ==================== */
   .cp-section { 
     padding: 14px 18px; 
   }
@@ -375,7 +400,8 @@
     font-size: 13px; 
     color: rgba(255,255,255,0.85); 
   }
-  
+
+  /* ==================== TOGGLE SWITCH ==================== */
   .toggle-switch {
     position: relative;
     width: 40px;
@@ -406,6 +432,7 @@
   .toggle-switch input:checked + .toggle-track { background: rgba(255,255,255,0.4); }
   .toggle-switch input:checked + .toggle-track::before { transform: translateX(18px); }
 
+  /* ==================== SUBTITLE SETTINGS ==================== */
   .cp-label {
     font-size: 10px;
     font-weight: 600;
@@ -456,6 +483,7 @@
     text-align: right;
   }
 
+  /* ==================== SETTINGS BUTTON AND PANEL ==================== */
   .settings-btn {
     position: relative;
     flex-shrink: 0;
@@ -487,6 +515,7 @@
     transform: translateY(0);
   }
 
+  /* ==================== SETTINGS HEADER ==================== */
   .sp-header {
     display: flex;
     align-items: center;
@@ -508,6 +537,7 @@
     letter-spacing: 0.3px; 
   }
 
+  /* ==================== SETTINGS SECTION ==================== */
   .sp-section { 
     padding: 14px 18px; 
   }
@@ -525,6 +555,7 @@
     margin-bottom: 10px;
   }
 
+  /* ==================== LANGUAGE LIST ==================== */
   .lang-list { 
     display: flex; 
     flex-direction: column; 
@@ -541,10 +572,16 @@
     border: 1px solid transparent;
     transition: background 0.15s, border-color 0.15s;
     position: relative;
+    -webkit-tap-highlight-color: transparent;
+    tap-highlight-color: transparent;
   }
   
   .lang-row:hover { 
     background: rgba(255,255,255,0.07); 
+  }
+
+  .lang-row:active {
+    background: rgba(255,255,255,0.1);
   }
   
   .lang-row.active {
@@ -610,6 +647,7 @@
     display: block; 
   }
 
+  /* ==================== NOW PLAYING ANIMATION ==================== */
   .np-bar {
     display: flex;
     align-items: center;
@@ -641,6 +679,7 @@
     50% { transform: scaleY(1); }
   }
 
+  /* ==================== TITLE OVERLAY ==================== */
   .title-overlay {
     position: absolute;
     bottom: 110px;
@@ -665,21 +704,8 @@
     gap: 10px;
     margin-top: 8px;
   }
-  
-  .t-badge {
-    background: rgba(255,255,255,0.2);
-    color: #fff;
-    padding: 2px 9px;
-    border-radius: 3px;
-    font-size: 11px;
-    font-weight: 700;
-  }
-  
-  .t-info {
-    color: rgba(255,255,255,0.75);
-    font-size: 13px;
-  }
 
+  /* ==================== ERROR OVERLAY ==================== */
   .error-overlay {
     position: absolute;
     inset: 0;
@@ -707,24 +733,349 @@
     cursor: pointer;
     margin-top: 4px;
     transition: background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    tap-highlight-color: transparent;
   }
   
   .retry-btn:hover { background: rgba(255,255,255,0.3); }
+  .retry-btn:active { background: rgba(255,255,255,0.25); }
 
+  /* ==================== FULLSCREEN ==================== */
   .player-wrapper:fullscreen { width: 100vw; height: 100vh; }
   .player-wrapper:fullscreen .video-container { height: 100vh; aspect-ratio: unset; }
   .player-wrapper:fullscreen .subtitles-container { bottom: 100px; }
   .player-wrapper:-webkit-full-screen { width: 100vw; height: 100vh; }
 
-  @media (max-width: 680px) {
-    .title-overlay { left: 18px; bottom: 90px; }
-    .controls-overlay { padding: 12px 16px 16px; }
-    .ctrl-btn { font-size: 18px; }
-    .ctrl-btn svg { width: 18px; height: 18px; }
-    .settings-panel { width: 270px; right: -10px; }
-    .cc-panel { width: 260px; right: -10px; }
-    .time-display { font-size: 11px; }
-    .subtitles-container { bottom: 70px; }
+  /* ==================== LAPTOP STYLES ==================== */
+  @media (min-width: 1025px) {
+    .controls-overlay {
+      padding: 18px 28px 22px;
+    }
+
+    .ctrl-btn {
+      font-size: 20px;
+    }
+
+    .cc-panel,
+    .settings-panel {
+      width: 310px;
+    }
+
+    .vol-wrap:hover .vol-slider { 
+      width: 76px; 
+    }
+
+    .progress-track:hover { 
+      height: 7px; 
+    }
+  }
+
+  /* ==================== TABLET STYLES ==================== */
+  @media (min-width: 680px) and (max-width: 1024px) {
+    .controls-overlay {
+      padding: 14px 20px 18px;
+    }
+
+    .ctrl-btn {
+      font-size: 18px;
+      padding: 6px;
+    }
+
+    .ctrl-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .cc-panel,
+    .settings-panel {
+      width: 280px;
+      right: -5px;
+    }
+
+    .time-display {
+      font-size: 12px;
+    }
+
+    .vol-wrap:hover .vol-slider { 
+      width: 60px; 
+    }
+  }
+
+  /* ==================== MOBILE STYLES (GENERIC) ==================== */
+  @media (max-width: 679px) {
+    /* Mobile controls - Bottom overlay */
+    .controls-overlay {
+      padding: 12px 14px 16px;
+      background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 60%, transparent 100%);
+    }
+
+    /* Mobile buttons - Smaller and more spaced */
+    .ctrl-btn {
+      font-size: 16px;
+      padding: 8px;
+      min-height: 44px;
+      min-width: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ctrl-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Progress track - Touch friendly */
+    .progress-track {
+      height: 5px;
+      cursor: pointer;
+    }
+
+    .progress-track:hover { 
+      height: 5px; 
+    }
+
+    /* Mobile progress handle */
+    .prog-handle {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Time display - Smaller on mobile */
+    .time-display {
+      font-size: 11px;
+      padding: 0 4px;
+    }
+
+    /* Volume wrap - Hide slider on mobile */
+    .vol-wrap {
+      gap: 0px;
+    }
+
+    .vol-wrap:hover .vol-slider { 
+      width: 0px; 
+    }
+
+    .vol-slider {
+      display: none;
+    }
+
+    /* Panels - Full width on mobile */
+    .cc-panel,
+    .settings-panel {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      border-radius: 16px 16px 0 0;
+      max-height: 70vh;
+      overflow-y: auto;
+      padding-bottom: 20px;
+    }
+
+    .cc-panel.open,
+    .settings-panel.open {
+      transform: translateY(0);
+    }
+
+    /* Language list - Better spacing on mobile */
+    .lang-row {
+      padding: 12px 16px;
+      min-height: 50px;
+    }
+
+    .lang-name {
+      font-size: 14px;
+    }
+
+    .lang-meta {
+      font-size: 12px;
+    }
+
+    .np-bar {
+      right: 50px;
+    }
+
+    /* Skip buttons - Hide text on mobile */
+    .ctrl-btn.sm svg text {
+      display: none;
+    }
+
+    /* Subtitles - Adjust for mobile */
+    .subtitles-container {
+      bottom: 70px;
+    }
+
+    .subtitle-text {
+      font-size: clamp(14px, 3vw, 20px);
+      padding: 6px 16px;
+    }
+
+    /* Title overlay - Adjust for mobile */
+    .title-overlay {
+      left: 14px;
+      bottom: 85px;
+    }
+
+    .title-overlay h1 {
+      font-size: clamp(18px, 3.5vw, 28px);
+    }
+  }
+
+  /* ==================== ANDROID SPECIFIC STYLES ==================== */
+  @media (max-width: 679px) and (orientation: portrait) {
+    /* Portrait mode optimizations */
+    .controls-overlay {
+      padding: 10px 12px 14px;
+    }
+
+    .ctrl-row {
+      gap: 4px;
+    }
+
+    .ctrl-btn {
+      padding: 6px;
+      min-height: 40px;
+      min-width: 40px;
+    }
+
+    .time-display {
+      font-size: 10px;
+      padding: 0 3px;
+    }
+
+    .cc-panel,
+    .settings-panel {
+      border-radius: 20px 20px 0 0;
+      max-height: 75vh;
+    }
+  }
+
+  @media (max-width: 679px) and (orientation: landscape) {
+    /* Landscape mode optimizations */
+    .controls-overlay {
+      padding: 8px 12px 12px;
+    }
+
+    .subtitle-text {
+      font-size: clamp(12px, 2.5vw, 16px);
+      padding: 4px 12px;
+    }
+
+    .subtitles-container {
+      bottom: 60px;
+    }
+
+    .cc-panel,
+    .settings-panel {
+      max-height: 90vh;
+    }
+
+    .title-overlay {
+      display: none;
+    }
+  }
+
+  /* ==================== IOS SPECIFIC STYLES ==================== */
+  @supports (-webkit-touch-callout: none) {
+    /* iOS specific fixes */
+    .player-wrapper {
+      width: 100vw;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .ctrl-btn {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: slider-horizontal;
+    }
+
+    .controls-overlay {
+      padding-bottom: max(22px, env(safe-area-inset-bottom));
+    }
+
+    /* iOS safe area for notch/home indicator */
+    @supports (padding: max(0px)) {
+      .player-wrapper {
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+    }
+  }
+
+  /* ==================== SMALL MOBILE (UNDER 400px) ==================== */
+  @media (max-width: 399px) {
+    .controls-overlay {
+      padding: 8px 10px 12px;
+    }
+
+    .ctrl-btn {
+      font-size: 14px;
+      padding: 5px;
+      min-height: 36px;
+      min-width: 36px;
+    }
+
+    .ctrl-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .time-display {
+      font-size: 9px;
+      padding: 0 2px;
+    }
+
+    .spacer {
+      min-width: 0;
+      flex: 0.5;
+    }
+
+    .subtitle-text {
+      font-size: clamp(12px, 2.5vw, 16px);
+      padding: 4px 12px;
+    }
+  }
+
+  /* ==================== LARGE MOBILE (400px - 679px) ==================== */
+  @media (min-width: 400px) and (max-width: 679px) {
+    .controls-overlay {
+      padding: 12px 14px 16px;
+    }
+
+    .ctrl-btn {
+      font-size: 16px;
+      padding: 7px;
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    .ctrl-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .time-display {
+      font-size: 11px;
+      padding: 0 4px;
+    }
   }
 </style>
 </head>
@@ -821,7 +1172,7 @@
             <!-- VOLUME ICON - Changes based on volume level -->
             <i id="volIcon" class="bi bi-volume-up-fill"></i>
           </button>
-          <!-- VOLUME SLIDER - Adjusts volume level from 0 to 1 -->
+          <!-- VOLUME SLIDER - Adjusts volume level from 0 to 1 (Hidden on mobile) -->
           <input type="range" class="vol-slider" id="volSlider" min="0" max="1" step="0.02" value="1">
         </div>
 
@@ -844,7 +1195,7 @@
             <i class="bi bi-badge-cc"></i>
           </button>
 
-          <!-- CAPTIONS PANEL - Dropdown menu for subtitle settings -->
+          <!-- CAPTIONS PANEL - Dropdown menu for subtitle settings (Full screen on mobile) -->
           <div class="cc-panel" id="ccPanel">
             <!-- CC PANEL HEADER - Shows title and icon -->
             <div class="cp-header">
@@ -895,7 +1246,7 @@
             <i class="bi bi-music-note-list"></i>
           </button>
 
-          <!-- AUDIO LANGUAGE PANEL - Dropdown menu for audio selection -->
+          <!-- AUDIO LANGUAGE PANEL - Dropdown menu for audio selection (Full screen on mobile) -->
           <div class="settings-panel" id="settingsPanel">
             <!-- AUDIO PANEL HEADER - Shows title and icon -->
             <div class="sp-header">
@@ -1029,6 +1380,34 @@
 </div>
 
 <script>
+// ==================== DEVICE DETECTION ==================== 
+// Detect device type for platform-specific optimizations
+const deviceDetect = () => {
+  // Get user agent string
+  const ua = navigator.userAgent;
+  
+  // Detect iOS/iPadOS
+  const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  
+  // Detect Android
+  const isAndroid = /Android/.test(ua);
+  
+  // Detect if mobile (touchscreen device)
+  const isMobile = /Mobile|Android|iPhone/.test(ua);
+  
+  // Detect if tablet
+  const isTablet = /iPad|Android/.test(ua) && !/Mobile/.test(ua);
+  
+  // Detect if desktop
+  const isDesktop = !isMobile && !isTablet;
+  
+  // Return device info object
+  return { isIOS, isAndroid, isMobile, isTablet, isDesktop };
+};
+
+// Initialize device detection
+const device = deviceDetect();
+
 // ==================== CONSTANTS ====================
 // Video URL for HLS streaming - Main video source
 const VIDEO_URL = "https://s22.nm-cdn11.top/files/82180524/1080p/1080p.m3u8?in=7520447f5ea362e14297a2d5f4267541::6007d6733379194eb88141417c43ea81::1776336427::ni";
@@ -1187,8 +1566,8 @@ let isFullscreen = false;
 // Controls auto-hide variables
 // Controls hide timer ID
 let controlsHideTimer = null;
-// Delay before hiding controls in milliseconds
-let controlsAutoHideDelay = 3000;
+// Delay before hiding controls in milliseconds - longer on mobile for easier access
+let controlsAutoHideDelay = device.isMobile ? 4000 : 3000;
 
 // Click tracking variables
 // Last click timestamp
@@ -1201,6 +1580,10 @@ let lastClickY = 0;
 // Timeout variables
 // Audio loading timeout ID
 let audioLoadTimeout = null;
+
+// Mobile orientation variables
+// Current device orientation
+let currentOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -1271,8 +1654,8 @@ function showControls() {
   // Clear any existing hide timer
   clearTimeout(controlsHideTimer);
 
-  // If playing and panels closed, schedule auto-hide
-  if (!vid.paused && !ccPanelOpen && !settingsPanelOpen) {
+  // If playing and panels closed, schedule auto-hide (skip on mobile)
+  if (!vid.paused && !ccPanelOpen && !settingsPanelOpen && !device.isMobile) {
     controlsHideTimer = setTimeout(() => {
       // Check if still should hide
       if (!vid.paused && !ccPanelOpen && !settingsPanelOpen && controls.classList.contains('hidden') === false) {
@@ -1294,6 +1677,14 @@ function hideControls() {
     // Hide mouse cursor
     videoContainer.classList.remove('show-cursor');
   }
+}
+
+// Close all panels
+function closeAllPanels() {
+  // Close CC panel
+  closeCCPanel();
+  // Close settings panel
+  closeSettingsPanel();
 }
 
 // ==================== SUBTITLE FUNCTIONS ====================
@@ -2102,6 +2493,12 @@ if (videoContainer) {
   videoContainer.addEventListener('mousemove', () => {
     showControls();
   });
+
+  // Touch start on video - show controls and handle play/pause (mobile)
+  videoContainer.addEventListener('touchstart', (e) => {
+    // Show controls on touch
+    showControls();
+  });
 }
 
 // Skip back button click
@@ -2159,8 +2556,8 @@ if (muteBtn) {
     applyVol();
     // Update volume icon
     updateVolIcon(vol);
-    // Update slider value
-    if (volSlider) volSlider.value = muted ? 0 : vol;
+    // Update slider value (if visible)
+    if (volSlider && !device.isMobile) volSlider.value = muted ? 0 : vol;
   });
 }
 
@@ -2194,8 +2591,11 @@ if (ccBtn) {
   });
 }
 
-// Close panels when clicking outside
+// Close panels when clicking outside (desktop only)
 document.addEventListener('click', (e) => {
+  // Skip on mobile - panels are already modal
+  if (device.isMobile) return;
+  
   // Check if CC panel should close
   if (ccPanelOpen && ccPanel && !ccPanel.contains(e.target) && e.target !== ccBtn) {
     closeCCPanel();
@@ -2266,7 +2666,7 @@ document.addEventListener('fullscreenchange', () => {
   }
 });
 
-// ==================== EVENT LISTENERS - KEYBOARD SHORTCUTS ====================
+// ==================== EVENT LISTENERS - KEYBOARD SHORTCUTS ==================== 
 
 // Keyboard event listener
 document.addEventListener('keydown', (e) => {
@@ -2365,6 +2765,23 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// ==================== EVENT LISTENERS - ORIENTATION CHANGE ==================== 
+
+// Handle device orientation change (mobile)
+window.addEventListener('orientationchange', () => {
+  // Update current orientation
+  currentOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+  
+  // Log orientation change
+  console.log('Orientation changed to:', currentOrientation);
+  
+  // Close any open panels on orientation change
+  closeAllPanels();
+  
+  // Show controls after orientation change
+  showControls();
+});
+
 // ==================== EVENT LISTENERS - ERROR RECOVERY ====================
 
 // Retry button click event
@@ -2374,6 +2791,18 @@ if (retryBtn) {
     if (errOverlay) errOverlay.classList.remove('show');
     // Re-initialize video
     initVideo();
+  });
+}
+
+// ==================== EVENT LISTENERS - PREVENT DEFAULT TOUCH BEHAVIORS ==================== 
+
+// Prevent default double-tap to zoom on iOS
+if (device.isIOS) {
+  document.addEventListener('touchend', (e) => {
+    // Check if it's a double tap
+    if (e.touches.length === 0) {
+      // Double tap zoom prevention is handled by viewport meta tag
+    }
   });
 }
 
@@ -2408,8 +2837,12 @@ if (subtitleSizeSlider) {
   subtitleSizeSlider.value = 24;
 }
 
-// Log initialization complete
-console.log('Player Initialized');
+// Log initialization complete with device info
+console.log('Player Initialized', {
+  device: device.isIOS ? 'iOS' : device.isAndroid ? 'Android' : device.isMobile ? 'Mobile' : 'Desktop',
+  isTablet: device.isTablet,
+  screenSize: `${window.innerWidth}x${window.innerHeight}`
+});
 </script>
 </body>
 </html>
